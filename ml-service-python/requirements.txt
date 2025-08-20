@@ -1,0 +1,7 @@
+# AFTER
+fastapi
+uvicorn[standard]
+pandas
+scikit-learn
+lightgbm
+pydantic
