@@ -1,0 +1,30 @@
+# FILE: pythonProject1/docker-compose.yml
+# This is the correct version for your project structure.
+
+version: '3.8'
+
+services:
+  # The Backend Service (Orchestrator)
+  # Its hostname on the network is 'backend'
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - ml-service-python # Depends on the service below
+    networks:
+      - app-network
+
+  # The ML Service (Worker)
+  # Its hostname on the network is 'ml-service-python'
+  ml-service-python:
+    build:
+      context: ./ml-service-python
+    networks:
+      - app-network
+
+# The private network that allows the services to communicate.
+networks:
+  app-network:
+    driver: bridge
