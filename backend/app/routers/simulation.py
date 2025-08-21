@@ -1,67 +1,181 @@
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+from typing import Dict, List, Any
+import json
 import asyncio
-from fastapi import APIRouter, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
-import httpx
-from app.datastore import mem_store
-from app.websocket_manager import manager
+from datetime import datetime
+import random
 
 router = APIRouter()
-ML_SERVICE_URL = "http://ml-service-python:8000"
 
-async def run_simulation_logic():
-    """The background task for running the simulation."""
-    if 'dataset' not in mem_store or 'date_ranges' not in mem_store:
-        await manager.broadcast_json({"status": "Error", "message": "Dataset or ranges not configured."})
-        return
+# Store simulation state in memory (in production, use a database)
+simulation_state = {
+    "is_running": False,
+    "predictions": [],
+    "stats": {
+        "total_predictions": 0,
+        "out_of_range": 0,
+        "accuracy": 0
+    }
+}
 
-    df = mem_store['dataset']
-    ranges = mem_store['date_ranges']
-    sim_df = df[(df['synthetic_timestamp'] >= ranges.simStart) & (df['synthetic_timestamp'] <= ranges.simEnd)]
+# WebSocket connection manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
 
-    if sim_df.empty:
-        await manager.broadcast_json({"status": "Complete", "message": "No data in simulation period."})
-        return
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
 
-    async with httpx.AsyncClient() as client:
-        for _, row in sim_df.iterrows():
-            row_data = row.to_dict()
-            # Convert timestamp to string for JSON serialization
-            row_data['synthetic_timestamp'] = row_data['synthetic_timestamp'].isoformat()
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
 
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
             try:
-                response = await client.post(f"{ML_SERVICE_URL}/predict", json={"data": row_data})
-                if response.status_code == 200:
-                    prediction_result = response.json()
-                    await manager.broadcast_json({
-                        "type": "prediction",
-                        "payload": {
-                            "timestamp": row_data['synthetic_timestamp'],
-                            "sampleId": row_data.get('Id', 'N/A'),
-                            "prediction": prediction_result
-                        }
-                    })
-                else:
-                     await manager.broadcast_json({"type": "error", "message": f"Prediction failed for row"})
+                await connection.send_text(message)
+            except:
+                # Remove disconnected clients
+                self.active_connections.remove(connection)
 
-            except httpx.RequestError:
-                 await manager.broadcast_json({"type": "error", "message": "ML service is unavailable"})
+manager = ConnectionManager()
 
-            await asyncio.sleep(1) # Simulate real-time 1-second interval
+class SimulationStartRequest(BaseModel):
+    pass
 
-    await manager.broadcast_json({"type": "status", "message": "Simulation completed!"})
-
+class SimulationStopRequest(BaseModel):
+    pass
 
 @router.post("/simulation/start")
-async def start_simulation(background_tasks: BackgroundTasks):
-    background_tasks.add_task(run_simulation_logic)
-    return {"message": "Simulation started."}
+async def start_simulation(request: SimulationStartRequest):
+    """
+    Start the simulation process
+    """
+    try:
+        simulation_state.update({
+            "is_running": True,
+            "started_at": datetime.now().isoformat(),
+            "predictions": [],
+            "stats": {
+                "total_predictions": 0,
+                "out_of_range": 0,
+                "accuracy": 0
+            }
+        })
+        
+        return {
+            "success": True,
+            "message": "Simulation started successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error starting simulation: {str(e)}")
 
+@router.post("/simulation/stop")
+async def stop_simulation(request: SimulationStopRequest):
+    """
+    Stop the simulation process
+    """
+    try:
+        simulation_state.update({
+            "is_running": False,
+            "stopped_at": datetime.now().isoformat()
+        })
+        
+        return {
+            "success": True,
+            "message": "Simulation stopped successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error stopping simulation: {str(e)}")
+
+@router.get("/simulation/status")
+async def get_simulation_status():
+    """
+    Get current simulation status
+    """
+    return {
+        "success": True,
+        "data": simulation_state
+    }
+
+@router.get("/simulation/predictions")
+async def get_predictions():
+    """
+    Get all predictions from the current simulation
+    """
+    return {
+        "success": True,
+        "data": {
+            "predictions": simulation_state["predictions"],
+            "stats": simulation_state["stats"]
+        }
+    }
 
 @router.websocket("/ws/simulation")
 async def websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time simulation data
+    """
     await manager.connect(websocket)
     try:
         while True:
-            # Keep the connection alive
-            await websocket.receive_text()
+            # Send real-time data every 2 seconds
+            await asyncio.sleep(2)
+            
+            if simulation_state["is_running"]:
+                # Generate a new prediction
+                prediction = generate_prediction()
+                simulation_state["predictions"].append(prediction)
+                simulation_state["stats"]["total_predictions"] += 1
+                
+                if prediction["prediction"] == "Fail":
+                    simulation_state["stats"]["out_of_range"] += 1
+                
+                # Calculate accuracy
+                correct_predictions = len([p for p in simulation_state["predictions"] if p["correct"]])
+                simulation_state["stats"]["accuracy"] = (
+                    correct_predictions / len(simulation_state["predictions"]) * 100
+                    if simulation_state["predictions"] else 0
+                )
+                
+                # Send to all connected clients
+                await manager.broadcast(json.dumps({
+                    "type": "prediction",
+                    "data": prediction,
+                    "stats": simulation_state["stats"]
+                }))
+            else:
+                # Send status update
+                await manager.broadcast(json.dumps({
+                    "type": "status",
+                    "data": simulation_state
+                }))
+                
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+def generate_prediction():
+    """
+    Generate a simulated prediction
+    """
+    now = datetime.now()
+    sample_id = f"SAMPLE-{random.randint(100, 999)}"
+    prediction = "Pass" if random.random() > 0.2 else "Fail"
+    confidence = random.randint(80, 100)
+    computation_time = random.randint(50, 150)
+    threshold = 85
+    correct = random.random() > 0.1  # 90% accuracy
+    
+    return {
+        "time": now.strftime("%I:%M %p"),
+        "sample_id": sample_id,
+        "prediction": prediction,
+        "confidence": confidence,
+        "computation_time": computation_time,
+        "threshold": threshold,
+        "correct": correct
+    }

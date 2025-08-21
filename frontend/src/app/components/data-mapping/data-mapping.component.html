@@ -1,0 +1,128 @@
+<div class="mapping-container">
+  <h2>Date Range Selection</h2>
+
+  <div class="date-ranges-section">
+    <div class="date-range-group">
+      <div class="date-range">
+        <h3>Training Period</h3>
+        <div class="date-inputs">
+          <div class="input-group">
+            <label>Start Date</label>
+            <input 
+              type="date" 
+              [(ngModel)]="trainingPeriod.startDate"
+              (change)="onDateChange()"
+            >
+          </div>
+          <div class="input-group">
+            <label>End Date</label>
+            <input 
+              type="date" 
+              [(ngModel)]="trainingPeriod.endDate"
+              (change)="onDateChange()"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="date-range">
+        <h3>Testing Period</h3>
+        <div class="date-inputs">
+          <div class="input-group">
+            <label>Start Date</label>
+            <input 
+              type="date" 
+              [(ngModel)]="testingPeriod.startDate"
+              (change)="onDateChange()"
+            >
+          </div>
+          <div class="input-group">
+            <label>End Date</label>
+            <input 
+              type="date" 
+              [(ngModel)]="testingPeriod.endDate"
+              (change)="onDateChange()"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="date-range">
+        <h3>Simulation Period</h3>
+        <div class="date-inputs">
+          <div class="input-group">
+            <label>Start Date</label>
+            <input 
+              type="date" 
+              [(ngModel)]="simulationPeriod.startDate"
+              (change)="onDateChange()"
+            >
+          </div>
+          <div class="input-group">
+            <label>End Date</label>
+            <input 
+              type="date" 
+              [(ngModel)]="simulationPeriod.endDate"
+              (change)="onDateChange()"
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="validation-message" *ngIf="isValidationSuccess">
+      <span class="success-icon">✓</span>
+      Date ranges validated successfully!
+    </div>
+
+    <div class="summary-boxes">
+      <div class="summary-box training">
+        <h4>Training Period</h4>
+        <div class="summary-value">{{ trainingPeriod.days }} days</div>
+        <div class="summary-dates">{{ trainingPeriod.startDate }} - {{ trainingPeriod.endDate }}</div>
+      </div>
+
+      <div class="summary-box testing">
+        <h4>Testing Period</h4>
+        <div class="summary-value">{{ testingPeriod.days }} days</div>
+        <div class="summary-dates">{{ testingPeriod.startDate }} - {{ testingPeriod.endDate }}</div>
+      </div>
+
+      <div class="summary-box simulation">
+        <h4>Simulation Period</h4>
+        <div class="summary-value">{{ simulationPeriod.days }} days</div>
+        <div class="summary-dates">{{ simulationPeriod.startDate }} - {{ simulationPeriod.endDate }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-section">
+    <h3>Selected Date Ranges Summary</h3>
+    <div class="chart-container">
+      <div class="chart-bars">
+        <div class="chart-bar training" [style.height.%]="(trainingPeriod.days / 365) * 100">
+          <span class="bar-label">Training</span>
+        </div>
+        <div class="chart-bar testing" [style.height.%]="(testingPeriod.days / 365) * 100">
+          <span class="bar-label">Testing</span>
+        </div>
+        <div class="chart-bar simulation" [style.height.%]="(simulationPeriod.days / 365) * 100">
+          <span class="bar-label">Simulation</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="validate-btn" (click)="validateRanges()">
+      Validate Ranges
+    </button>
+    <button 
+      class="next-btn" 
+      (click)="nextStep()" 
+      [disabled]="!isValidationSuccess"
+    >
+      Next
+    </button>
+  </div>
+</div>

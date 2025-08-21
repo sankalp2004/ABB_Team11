@@ -1,78 +1,129 @@
-from fastapi import APIRouter, HTTPException, Depends
-import httpx
-from app.datastore import mem_store
-from app.models import DateRangePayload
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import Dict, List, Any
+import json
+from datetime import datetime
 
 router = APIRouter()
-ML_SERVICE_URL = "http://ml-service-python:8000"
 
-@router.post("/training/date-ranges")
-async def set_date_ranges(payload: DateRangePayload):
-    if 'dataset' not in mem_store:
-        raise HTTPException(status_code=404, detail="Dataset not found. Please upload a file first.")
+# Store training state and date ranges in memory (in production, use a database)
+training_state = {
+    "is_training": False,
+    "progress": 0,
+    "metrics": None,
+    "training_data": []
+}
 
-    df = mem_store['dataset']
-    mem_store['date_ranges'] = payload
+date_ranges = {}
 
-    def count_records(start, end):
-        return df[(df['synthetic_timestamp'] >= start) & (df['synthetic_timestamp'] <= end)].shape[0]
+class DateRangeRequest(BaseModel):
+    training: Dict[str, Any]
+    testing: Dict[str, Any]
+    simulation: Dict[str, Any]
 
+class TrainingCompleteRequest(BaseModel):
+    metrics: Dict[str, float]
+    training_data: List[Dict[str, Any]]
+
+@router.post("/date-ranges")
+async def save_date_ranges(request: DateRangeRequest):
+    """
+    Save date ranges for training, testing, and simulation periods
+    """
+    try:
+        date_ranges.update({
+            "training": request.training,
+            "testing": request.testing,
+            "simulation": request.simulation,
+            "saved_at": datetime.now().isoformat()
+        })
+        
+        return {
+            "success": True,
+            "message": "Date ranges saved successfully",
+            "data": date_ranges
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving date ranges: {str(e)}")
+
+@router.get("/date-ranges")
+async def get_date_ranges():
+    """
+    Get saved date ranges
+    """
     return {
-        "status": "Valid",
-        "trainingRecords": count_records(payload.trainStart, payload.trainEnd),
-        "testingRecords": count_records(payload.testStart, payload.testEnd),
-        "simulationRecords": count_records(payload.simStart, payload.simEnd)
+        "success": True,
+        "data": date_ranges
     }
 
-# FILE: backend/app/routers/training.py
-# Replace the entire train_model function with this one.
+@router.post("/training-complete")
+async def training_complete(request: TrainingCompleteRequest):
+    """
+    Handle training completion with metrics
+    """
+    try:
+        training_state.update({
+            "is_training": False,
+            "progress": 100,
+            "metrics": request.metrics,
+            "training_data": request.training_data,
+            "completed_at": datetime.now().isoformat()
+        })
+        
+        return {
+            "success": True,
+            "message": "Training completed successfully",
+            "data": {
+                "metrics": request.metrics,
+                "training_data": request.training_data
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing training completion: {str(e)}")
 
-# FILE: backend/app/routers/training.py
-# Replace the entire train_model function with this one.
+@router.get("/training-status")
+async def get_training_status():
+    """
+    Get current training status
+    """
+    return {
+        "success": True,
+        "data": training_state
+    }
 
-@router.post("/training/train-model")
-async def train_model():
-    if 'dataset' not in mem_store:
-        raise HTTPException(status_code=404, detail="Dataset not found.")
-    if 'date_ranges' not in mem_store:
-        raise HTTPException(status_code=400, detail="Date ranges not set.")
+@router.post("/start-training")
+async def start_training():
+    """
+    Start the training process
+    """
+    try:
+        training_state.update({
+            "is_training": True,
+            "progress": 0,
+            "started_at": datetime.now().isoformat()
+        })
+        
+        return {
+            "success": True,
+            "message": "Training started successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error starting training: {str(e)}")
 
-    df = mem_store['dataset']
-    ranges = mem_store['date_ranges']
-
-    train_df = df[(df['synthetic_timestamp'] >= ranges.trainStart) & (df['synthetic_timestamp'] <= ranges.trainEnd)]
-    test_df = df[(df['synthetic_timestamp'] >= ranges.testStart) & (df['synthetic_timestamp'] <= ranges.testEnd)]
-
-    # Create copies to safely modify the data for serialization
-    train_df_serializable = train_df.copy()
-    test_df_serializable = test_df.copy()
-
-    # Convert datetimes to JSON-safe ISO format strings
-    train_df_serializable['synthetic_timestamp'] = train_df_serializable['synthetic_timestamp'].apply(lambda dt: dt.isoformat())
-    test_df_serializable['synthetic_timestamp'] = test_df_serializable['synthetic_timestamp'].apply(lambda dt: dt.isoformat())
-
-    # --- THIS IS THE FINAL FIX ---
-    # Replace infinite values (Infinity, -Infinity) with NaN (Not a Number)
-    # The JSON encoder cannot handle 'inf'.
-    train_df_serializable.replace([np.inf, -np.inf], np.nan, inplace=True)
-    test_df_serializable.replace([np.inf, -np.inf], np.nan, inplace=True)
-
-    # Now, when we convert to dict, Pandas will correctly handle NaN by converting
-    # it to 'null', which IS a valid JSON value.
-    train_data = train_df_serializable.to_dict(orient='records')
-    test_data = test_df_serializable.to_dict(orient='records')
-    # ---------------------------
-
-    payload = {"train_data": train_data, "test_data": test_data}
-
-    # Set a long timeout to allow for model training
-    async with httpx.AsyncClient(timeout=300.0) as client:
-        try:
-            response = await client.post(f"{ML_SERVICE_URL}/train", json=payload)
-            response.raise_for_status() # This will raise an exception for 4xx or 5xx responses
-            return response.json()
-        except httpx.RequestError as e:
-            raise HTTPException(status_code=503, detail=f"Could not connect to ML service: {e}")
-        except httpx.HTTPStatusError as e:
-            # Re-raise the error from the ML service with more context
-            raise HTTPException(status_code=e.response.status_code, detail=f"Error from ML service: {e.response.text}")
+@router.post("/stop-training")
+async def stop_training():
+    """
+    Stop the training process
+    """
+    try:
+        training_state.update({
+            "is_training": False,
+            "stopped_at": datetime.now().isoformat()
+        })
+        
+        return {
+            "success": True,
+            "message": "Training stopped successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error stopping training: {str(e)}")

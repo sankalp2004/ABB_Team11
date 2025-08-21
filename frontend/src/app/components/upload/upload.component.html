@@ -1,0 +1,101 @@
+<div class="upload-container">
+  <div class="upload-header">
+    <h2>Upload Dataset</h2>
+    <button class="clear-btn" (click)="clearData()" *ngIf="fileSummary">Clear Data</button>
+  </div>
+
+  <div class="upload-content">
+    <!-- File Upload Section -->
+    <div class="upload-section" *ngIf="!fileSummary">
+      <div class="upload-area">
+        <div class="upload-icon">📁</div>
+        <h3>Choose a CSV file to upload</h3>
+        <p>Drag and drop your file here or click to browse</p>
+        <input 
+          type="file" 
+          #fileInput 
+          accept=".csv" 
+          (change)="onFileSelected($event)"
+          style="display: none;"
+        >
+        <button class="upload-btn" (click)="fileInput.click()">
+          Choose File
+        </button>
+      </div>
+    </div>
+
+    <!-- File Summary Section -->
+    <div class="summary-section" *ngIf="fileSummary">
+      <div class="summary-cards">
+        <div class="summary-card active">
+          <div class="card-icon">✓</div>
+          <div class="card-content">
+            <h4>File Name</h4>
+            <p class="card-value">{{ fileSummary.fileName }}</p>
+            <p class="card-subtitle">{{ fileSummary.fileSize }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">✓</div>
+          <div class="card-content">
+            <h4>Columns</h4>
+            <p class="card-value">{{ fileSummary.columns }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">✓</div>
+          <div class="card-content">
+            <h4>Rows</h4>
+            <p class="card-value">{{ fileSummary.rows }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">✓</div>
+          <div class="card-content">
+            <h4>Missing Values</h4>
+            <p class="card-value">{{ fileSummary.missingValues }}</p>
+          </div>
+        </div>
+
+        <div class="summary-card">
+          <div class="card-icon">✓</div>
+          <div class="card-content">
+            <h4>Last Upload</h4>
+            <p class="card-value">{{ fileSummary.lastUpload }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="upload-actions">
+        <button 
+          class="upload-btn primary" 
+          (click)="uploadFile()" 
+          [disabled]="isUploading"
+          *ngIf="!uploadSuccess"
+        >
+          <span *ngIf="!isUploading">Upload File</span>
+          <span *ngIf="isUploading">Uploading...</span>
+        </button>
+        
+        <div class="success-message" *ngIf="uploadSuccess">
+          <span class="success-icon">✓</span>
+          File uploaded successfully!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="navigation">
+    <button 
+      class="next-btn" 
+      (click)="nextStep()" 
+      [disabled]="!fileSummary || !uploadSuccess"
+    >
+      Next
+    </button>
+  </div>
+</div>

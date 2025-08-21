@@ -1,7 +1,7 @@
-# AFTER
-fastapi==0.95.2
-pydantic==1.10.7
-httpx
-pandas
-python-multipart
-uvicorn[standard]
+# FastAPI and dependencies
+fastapi>=0.104.0
+pydantic>=2.0.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+httpx>=0.25.0
+pandas>=2.0.0

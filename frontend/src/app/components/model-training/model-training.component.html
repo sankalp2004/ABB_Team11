@@ -1,0 +1,143 @@
+<div class="training-container">
+  <h2>Model Training & Evaluation</h2>
+
+  <div class="training-controls">
+    <button 
+      class="train-btn" 
+      (click)="startTraining()" 
+      [disabled]="isTraining || trainingComplete"
+      *ngIf="!isTraining && !trainingComplete"
+    >
+      Train Model
+    </button>
+    
+    <button 
+      class="stop-btn" 
+      (click)="stopTraining()" 
+      *ngIf="isTraining"
+    >
+      Stop Training
+    </button>
+  </div>
+
+  <div class="metrics-section" *ngIf="trainingComplete">
+    <h3>Model Performance Metrics</h3>
+    <div class="metrics-grid">
+      <div class="metric-card accuracy">
+        <div class="metric-value">{{ metrics.accuracy }}%</div>
+        <div class="metric-label">Accuracy</div>
+      </div>
+      
+      <div class="metric-card precision">
+        <div class="metric-value">{{ metrics.precision }}%</div>
+        <div class="metric-label">Precision</div>
+      </div>
+      
+      <div class="metric-card recall">
+        <div class="metric-value">{{ metrics.recall }}%</div>
+        <div class="metric-label">Recall</div>
+      </div>
+      
+      <div class="metric-card f1-score">
+        <div class="metric-value">{{ metrics.f1Score }}%</div>
+        <div class="metric-label">F1-Score</div>
+      </div>
+    </div>
+    
+    <p class="training-note">
+      Model Performance is based on the current training data. Model is {{ trainingProgress }}% trained.
+    </p>
+  </div>
+
+  <div class="chart-section" *ngIf="trainingComplete">
+    <h3>Training Metrics</h3>
+    <div class="chart-container">
+      <div class="chart-line">
+        <svg width="100%" height="200" viewBox="0 0 400 200">
+          <defs>
+            <linearGradient id="accuracyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#4caf50;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#4caf50;stop-opacity:0.3" />
+            </linearGradient>
+            <linearGradient id="lossGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#f44336;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#f44336;stop-opacity:0.3" />
+            </linearGradient>
+          </defs>
+          
+          <!-- Grid lines -->
+          <g class="grid">
+            <line x1="0" y1="40" x2="400" y2="40" stroke="#e0e0e0" stroke-width="1"/>
+            <line x1="0" y1="80" x2="400" y2="80" stroke="#e0e0e0" stroke-width="1"/>
+            <line x1="0" y1="120" x2="400" y2="120" stroke="#e0e0e0" stroke-width="1"/>
+            <line x1="0" y1="160" x2="400" y2="160" stroke="#e0e0e0" stroke-width="1"/>
+          </g>
+          
+          <!-- Accuracy line -->
+          <polyline 
+            [attr.points]="getAccuracyPoints()" 
+            fill="none" 
+            stroke="#4caf50" 
+            stroke-width="2"
+          />
+          
+          <!-- Loss line -->
+          <polyline 
+            [attr.points]="getLossPoints()" 
+            fill="none" 
+            stroke="#f44336" 
+            stroke-width="2"
+          />
+          
+          <!-- Legend -->
+          <g class="legend">
+            <circle cx="50" cy="20" r="4" fill="#4caf50"/>
+            <text x="60" y="25" font-size="12" fill="#333">Training Accuracy</text>
+            <circle cx="200" cy="20" r="4" fill="#f44336"/>
+            <text x="210" y="25" font-size="12" fill="#333">Training Loss</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="performance-section" *ngIf="trainingComplete">
+    <h3>Model Performance</h3>
+    <div class="donut-chart">
+      <svg width="200" height="200" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#e0e0e0" stroke-width="20"/>
+        <circle cx="100" cy="100" r="80" fill="none" stroke="#4caf50" stroke-width="20" 
+                stroke-dasharray="502.4" stroke-dashoffset="50.24" transform="rotate(-90 100 100)"/>
+        <text x="100" y="100" text-anchor="middle" dy=".3em" font-size="24" font-weight="bold">92%</text>
+      </svg>
+      <div class="chart-legend">
+        <div class="legend-item">
+          <span class="legend-color" style="background: #4caf50;"></span>
+          <span>True Positive</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background: #2196f3;"></span>
+          <span>True Negative</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background: #ff9800;"></span>
+          <span>False Positive</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color" style="background: #f44336;"></span>
+          <span>False Negative</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="navigation">
+    <button 
+      class="next-btn" 
+      (click)="nextStep()" 
+      [disabled]="!trainingComplete"
+    >
+      Next
+    </button>
+  </div>
+</div>

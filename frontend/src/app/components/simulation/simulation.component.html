@@ -1,0 +1,127 @@
+<div class="simulation-container">
+  <h2>Real-Time Quality Prediction Simulation</h2>
+
+  <div class="simulation-controls">
+    <button 
+      class="start-btn" 
+      (click)="startSimulation()" 
+      [disabled]="isSimulationRunning"
+      *ngIf="!isSimulationRunning"
+    >
+      Start Simulation
+    </button>
+    
+    <button 
+      class="stop-btn" 
+      (click)="stopSimulation()" 
+      *ngIf="isSimulationRunning"
+    >
+      Stop Simulation
+    </button>
+  </div>
+
+  <div class="live-metrics" *ngIf="isSimulationRunning">
+    <div class="metric-card quality-score">
+      <div class="metric-value">{{ qualityScore }}%</div>
+      <div class="metric-label">Quality Score</div>
+    </div>
+    
+    <div class="metric-card confidence">
+      <div class="metric-value">{{ confidence }}%</div>
+      <div class="metric-label">Confidence</div>
+    </div>
+  </div>
+
+  <div class="stats-section">
+    <h3>Live Statistics</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">{{ liveStats.totalPredictions }}</div>
+        <div class="stat-label">Total Predictions</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-value">{{ liveStats.outOfRange }}</div>
+        <div class="stat-label">Out of Range</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-value">{{ liveStats.accuracy }}%</div>
+        <div class="stat-label">Accuracy</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="predictions-section">
+    <h3>Recent Predictions</h3>
+    <div class="predictions-table">
+      <div class="table-header">
+        <div class="header-cell">Time</div>
+        <div class="header-cell">Sample ID</div>
+        <div class="header-cell">Prediction</div>
+        <div class="header-cell">Confidence</div>
+        <div class="header-cell">Status</div>
+      </div>
+      
+      <div class="table-row" *ngFor="let prediction of predictions.slice(-10)">
+        <div class="table-cell">{{ prediction.time }}</div>
+        <div class="table-cell">{{ prediction.sampleId }}</div>
+        <div class="table-cell">
+          <span class="prediction-badge" [class.pass]="prediction.prediction === 'Pass'" [class.fail]="prediction.prediction === 'Fail'">
+            {{ prediction.prediction }}
+          </span>
+        </div>
+        <div class="table-cell">{{ prediction.confidence }}%</div>
+        <div class="table-cell">
+          <span class="status-badge" [class.correct]="prediction.correct" [class.incorrect]="!prediction.correct">
+            {{ prediction.correct ? 'Correct' : 'Incorrect' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-section">
+    <h3>Quality Trend</h3>
+    <div class="chart-container">
+      <div class="quality-chart">
+        <svg width="100%" height="200" viewBox="0 0 400 200">
+          <defs>
+            <linearGradient id="qualityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#4caf50;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#4caf50;stop-opacity:0.3" />
+            </linearGradient>
+          </defs>
+          
+          <!-- Grid lines -->
+          <g class="grid">
+            <line x1="0" y1="40" x2="400" y2="40" stroke="#e0e0e0" stroke-width="1"/>
+            <line x1="0" y1="80" x2="400" y2="80" stroke="#e0e0e0" stroke-width="1"/>
+            <line x1="0" y1="120" x2="400" y2="120" stroke="#e0e0e0" stroke-width="1"/>
+            <line x1="0" y1="160" x2="400" y2="160" stroke="#e0e0e0" stroke-width="1"/>
+          </g>
+          
+          <!-- Quality line -->
+          <polyline 
+            [attr.points]="getQualityPoints()" 
+            fill="none" 
+            stroke="#4caf50" 
+            stroke-width="3"
+          />
+          
+          <!-- Area fill -->
+          <polygon 
+            [attr.points]="getQualityArea()" 
+            fill="url(#qualityGradient)"
+            opacity="0.3"
+          />
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-indicator" [class.running]="isSimulationRunning">
+    <div class="status-dot"></div>
+    <span class="status-text">{{ isSimulationRunning ? 'Simulation Running' : 'Simulation Stopped' }}</span>
+  </div>
+</div>
