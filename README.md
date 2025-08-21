@@ -452,8 +452,6 @@ uvicorn main:app --reload --log-level debug
 
 ---
 
-**MiniML - Predictive Quality Control System**  
-Built with ❤️ using Angular 18+, FastAPI, and Python ML
 
 ## 👨‍💻 **Developed By**
 
