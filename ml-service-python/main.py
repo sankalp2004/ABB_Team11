@@ -45,6 +45,10 @@ def read_root():
     """Root endpoint to confirm the service is running."""
     return {"status": "IntelliInspect ML Service is running."}
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "ml-service-python"}
+
 
 @app.post("/train")
 async def train_model(request: TrainRequest):

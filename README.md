@@ -1,13 +1,13 @@
 # MiniML - Predictive Quality Control System
 
-A comprehensive machine learning application for predictive quality control with real-time simulation capabilities, built using Angular 18+, FastAPI, and Python ML services.
+A comprehensive machine learning application for predictive quality control with real-time simulation capabilities, built using Angular 18+, ASP.NET 8, and Python ML services.
 
 ## 🏗️ System Architecture
 
 ### High-Level Overview
 ```
 ┌─────────────────┐    HTTP/WebSocket    ┌─────────────────┐    HTTP    ┌─────────────────┐
-│   Angular 18+   │ ◄──────────────────► │   FastAPI       │ ◄────────► │   Python ML     │
+│   Angular 18+   │ ◄──────────────────► │   ASP.NET 8     │ ◄────────► │   Python ML     │
 │   Frontend      │                      │   Backend       │            │   Service       │
 │   (Port 4200)   │                      │   (Port 8000)   │            │   (Port 8001)   │
 └─────────────────┘                      └─────────────────┘            └─────────────────┘
@@ -22,10 +22,10 @@ Frontend (Angular 18+)
 ├── Model Training Component (Step 3)
 └── Simulation Component (Step 4)
 
-Backend (FastAPI)
-├── Upload Router (File handling)
-├── Training Router (Model training coordination)
-├── Simulation Router (Real-time simulation)
+Backend (ASP.NET 8)
+├── Upload Endpoints (File handling)
+├── Training Endpoints (Model training coordination)
+├── Simulation Endpoints (Real-time simulation)
 └── WebSocket Manager (Real-time communication)
 
 ML Service (Python)
@@ -38,7 +38,6 @@ ML Service (Python)
 
 ### Prerequisites
 - Node.js 18+ and npm
-- Angular CLI (install globally: `npm install -g @angular/cli`)
 - Python 3.8+
 - Docker and Docker Compose (for containerized deployment)
 
@@ -52,10 +51,9 @@ ML Service (Python)
 
 2. **Start Backend Services**
    ```bash
-   # Start FastAPI Backend
+   # Start ASP.NET 8 Backend
    cd backend
-   pip install -r requirements.txt
-   uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
+   dotnet run --urls "http://0.0.0.0:8000"
    
    # Start ML Service (in another terminal)
    cd ml-service-python
@@ -67,14 +65,13 @@ ML Service (Python)
    ```bash
    cd frontend
    npm install
-   npx ng serve
+   npm start
    ```
 
 4. **Access the Application**
    - Frontend: http://localhost:4200
    - Backend API: http://localhost:8000
    - ML Service: http://localhost:8001
-   - API Documentation: http://localhost:8000/docs
 
 ### Docker Deployment
 ```bash
@@ -82,7 +79,7 @@ ML Service (Python)
 docker-compose up --build
 
 # Access the application
-# Frontend: http://localhost:3000
+# Frontend: http://localhost:4200
 # Backend: http://localhost:8000
 # ML Service: http://localhost:8001
 ```
@@ -103,15 +100,9 @@ miniml-quality-control/
 │   │   └── app.config.ts            # Application configuration
 │   ├── Dockerfile                    # Frontend container
 │   └── nginx.conf                    # Nginx configuration
-├── backend/                          # FastAPI Backend
-│   ├── app/
-│   │   ├── routers/                 # API endpoints
-│   │   │   ├── upload.py            # File upload handling
-│   │   │   ├── training.py          # Training coordination
-│   │   │   └── simulation.py        # Simulation management
-│   │   ├── main.py                  # FastAPI application
-│   │   ├── models.py                # Data models
-│   │   └── websocket_manager.py     # Real-time communication
+├── backend/                          # ASP.NET 8 Backend
+│   ├── Program.cs                   # Main application entry point
+│   ├── MiniML.Backend.csproj        # Project configuration
 │   └── Dockerfile                   # Backend container
 ├── ml-service-python/               # Python ML Service
 │   ├── main.py                      # ML training & prediction
@@ -157,28 +148,6 @@ miniml-quality-control/
 - **HttpClient**: HTTP communication with backend
 - **WebSocket**: Real-time communication
 
-#### Angular CLI Commands
-```bash
-# Development server
-npx ng serve                    # Start development server (port 4200)
-npx ng serve --host 0.0.0.0    # Allow external connections
-npx ng serve --port 4200       # Specify custom port
-
-# Build commands
-npx ng build                   # Production build
-npx ng build --watch           # Watch mode for development
-npx ng build --configuration production  # Production configuration
-
-# Testing
-npx ng test                    # Run unit tests
-npx ng e2e                     # Run end-to-end tests
-
-# Code generation
-npx ng generate component      # Generate new component
-npx ng generate service        # Generate new service
-npx ng generate pipe           # Generate new pipe
-```
-
 #### Component Architecture
 ```typescript
 // Standalone component pattern
@@ -199,28 +168,28 @@ export class UploadComponent {
 - **Service communication**: HTTP calls to backend for data persistence
 - **Real-time updates**: WebSocket connections for live data
 
-### Backend (FastAPI)
+### Backend (ASP.NET 8)
 
 #### Key Technologies
-- **FastAPI**: Modern Python web framework
-- **Pydantic**: Data validation and serialization
+- **ASP.NET 8**: Modern .NET web framework with minimal APIs
+- **System.Text.Json**: Data serialization and validation
 - **WebSockets**: Real-time bidirectional communication
 - **CORS**: Cross-origin resource sharing
-- **In-memory storage**: Temporary data persistence
+- **In-memory storage**: Temporary data persistence with thread-safe collections
 
 #### API Structure
-```python
-# Modular router pattern
-app.include_router(upload.router, tags=["Upload"])
-app.include_router(training.router, tags=["Training"])
-app.include_router(simulation.router, tags=["Simulation"])
+```csharp
+// Minimal API pattern with endpoint groups
+app.MapPost("/upload", async (HttpRequest request, UploadedFilesStore store) => { ... });
+app.MapPost("/date-ranges", async (HttpRequest req, TrainingStateStore store) => { ... });
+app.MapPost("/simulation/start", (SimulationStateStore store) => { ... });
 ```
 
 #### Data Flow
-1. **Request Validation**: Pydantic models ensure data integrity
+1. **Request Validation**: JSON deserialization with error handling
 2. **Business Logic**: Process requests and coordinate with ML service
-3. **Response Formatting**: Consistent JSON responses
-4. **Error Handling**: Comprehensive error management
+3. **Response Formatting**: Consistent JSON responses using Results.Json
+4. **Error Handling**: Comprehensive error management with proper HTTP status codes
 
 ### ML Service (Python)
 
@@ -246,17 +215,23 @@ confidence = lgbm.predict_proba(data)
 ### Backend API (Port 8000)
 
 #### Upload Endpoints
-- `POST /upload` - Upload CSV file
+- `POST /upload` - Upload CSV file (supports up to 100MB)
 - `GET /files` - List uploaded files
-- `DELETE /files/{file_id}` - Delete uploaded file
+- `DELETE /files/{filename}` - Delete uploaded file
 
 #### Training Endpoints
 - `POST /date-ranges` - Set training/testing/simulation periods
+- `GET /date-ranges` - Get saved date ranges
 - `POST /training-complete` - Mark training as complete
+- `GET /training-status` - Get current training status
+- `POST /start-training` - Start training process
+- `POST /stop-training` - Stop training process
 
 #### Simulation Endpoints
 - `POST /simulation/start` - Start real-time simulation
 - `POST /simulation/stop` - Stop simulation
+- `GET /simulation/status` - Get simulation status
+- `GET /simulation/predictions` - Get all predictions
 - `WebSocket /ws/simulation` - Real-time simulation data
 
 ### ML Service API (Port 8001)
@@ -278,9 +253,11 @@ FROM node:18 AS builder
 # ... build steps
 FROM nginx:alpine AS production
 
-# Backend: Python FastAPI with optimized dependencies
-FROM python:3.11-slim
-# ... setup steps
+# Backend: ASP.NET 8 with optimized runtime
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# ... build steps
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+# ... runtime setup
 
 # ML Service: Python ML environment with scientific libraries
 FROM python:3.11-slim
@@ -291,8 +268,8 @@ FROM python:3.11-slim
 ```yaml
 # docker-compose.yml
 services:
-  frontend-angular:    # Angular app on port 3000
-  backend-dotnet:      # FastAPI on port 8000
+  frontend-angular:    # Angular app on port 4200
+  backend-dotnet:      # ASP.NET 8 on port 8000
   ml-service-python:   # ML service on port 8001
 ```
 
@@ -304,9 +281,10 @@ services:
 - **XSS Prevention**: Angular's built-in XSS protection
 
 ### Backend Security
-- **Request Validation**: Pydantic model validation
+- **Request Validation**: JSON model validation with error handling
 - **CORS Middleware**: Controlled cross-origin access
-- **Error Handling**: Secure error responses
+- **Error Handling**: Secure error responses with proper HTTP status codes
+- **File Upload Limits**: Configurable file size limits (100MB default)
 
 ### ML Service Security
 - **Input Sanitization**: Data validation before processing
@@ -363,8 +341,8 @@ services:
 ### Development Environment
 ```bash
 # Local development setup
-npx ng serve       # Frontend (port 4200)
-uvicorn backend.app.main:app --reload  # Backend (port 8000)
+npm start          # Frontend (port 4200)
+dotnet run --urls "http://0.0.0.0:8000"  # Backend (port 8000)
 uvicorn main:app --reload              # ML Service (port 8001)
 ```
 
@@ -388,7 +366,7 @@ NODE_ENV=production
 API_BASE_URL=http://localhost:8000
 
 # Backend
-PYTHONPATH=/app
+ASPNETCORE_URLS=http://+:8000
 ML_SERVICE_URL=http://ml-service-python:8000
 CORS_ORIGINS=http://localhost:4200,http://localhost:3000
 
@@ -429,17 +407,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 #### Common Issues
 1. **Port conflicts**: Ensure ports 4200, 8000, 8001 are available
 2. **Dependency issues**: Clear node_modules and reinstall
-3. **Angular CLI not found**: Install globally with `npm install -g @angular/cli`
-4. **Build errors**: Check TypeScript compilation errors
-5. **API errors**: Verify backend service is running
+3. **Build errors**: Check TypeScript compilation errors
+4. **API errors**: Verify backend service is running
 
 #### Debug Mode
 ```bash
 # Frontend debug
-npx ng build --verbose
+npm run build --verbose
 
 # Backend debug
-uvicorn backend.app.main:app --reload --log-level debug
+dotnet run --urls "http://0.0.0.0:8000" --verbosity detailed
 
 # ML Service debug
 uvicorn main:app --reload --log-level debug
@@ -452,13 +429,5 @@ uvicorn main:app --reload --log-level debug
 
 ---
 
-
-## 👨‍💻 **Developed By**
-
-- **Sankalp Jain**
-- **Achyuth Samavedhi** 
-- **Vineet Anand Modi** 
-
----
-
-*This project demonstrates a complete machine learning pipeline from data ingestion to real-time prediction, showcasing modern web development practices and enterprise-grade architecture.*
+**MiniML - Predictive Quality Control System**  
+Built by Sankalp, Achyuth and Vineet

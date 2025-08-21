@@ -1,31 +1,22 @@
-FROM python:3.11-slim
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
 
-WORKDIR /app
+COPY MiniML.Backend.csproj ./
+RUN dotnet restore MiniML.Backend.csproj
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements first for better caching
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application code
 COPY . .
+RUN dotnet publish MiniML.Backend.csproj -c Release -o /app/publish /p:UseAppHost=false
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
 
-# Expose port
+ENV ASPNETCORE_URLS=http://+:8000
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Start the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -fsS http://localhost:8000/health || exit 1
+
+ENTRYPOINT ["dotnet", "MiniML.Backend.dll"]
