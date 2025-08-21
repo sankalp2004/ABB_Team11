@@ -455,9 +455,9 @@ uvicorn main:app --reload --log-level debug
 
 ## 👨‍💻 **Developed By**
 
-- **Sankalp Jain** - Full Stack Development & System Architecture
-- **Achyuth Samavedhi** - Backend Development & API Design  
-- **Vineet Anand Modi** - Frontend Development & UI/UX Design
+- **Sankalp Jain**
+- **Achyuth Samavedhi** 
+- **Vineet Anand Modi** 
 
 ---
 
