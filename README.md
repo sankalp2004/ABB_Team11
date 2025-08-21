@@ -38,6 +38,7 @@ ML Service (Python)
 
 ### Prerequisites
 - Node.js 18+ and npm
+- Angular CLI (install globally: `npm install -g @angular/cli`)
 - Python 3.8+
 - Docker and Docker Compose (for containerized deployment)
 
@@ -66,7 +67,7 @@ ML Service (Python)
    ```bash
    cd frontend
    npm install
-   npm start
+   npx ng serve
    ```
 
 4. **Access the Application**
@@ -155,6 +156,28 @@ miniml-quality-control/
 - **Angular Router**: Client-side navigation
 - **HttpClient**: HTTP communication with backend
 - **WebSocket**: Real-time communication
+
+#### Angular CLI Commands
+```bash
+# Development server
+npx ng serve                    # Start development server (port 4200)
+npx ng serve --host 0.0.0.0    # Allow external connections
+npx ng serve --port 4200       # Specify custom port
+
+# Build commands
+npx ng build                   # Production build
+npx ng build --watch           # Watch mode for development
+npx ng build --configuration production  # Production configuration
+
+# Testing
+npx ng test                    # Run unit tests
+npx ng e2e                     # Run end-to-end tests
+
+# Code generation
+npx ng generate component      # Generate new component
+npx ng generate service        # Generate new service
+npx ng generate pipe           # Generate new pipe
+```
 
 #### Component Architecture
 ```typescript
@@ -340,7 +363,7 @@ services:
 ### Development Environment
 ```bash
 # Local development setup
-npm start          # Frontend (port 4200)
+npx ng serve       # Frontend (port 4200)
 uvicorn backend.app.main:app --reload  # Backend (port 8000)
 uvicorn main:app --reload              # ML Service (port 8001)
 ```
@@ -406,13 +429,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 #### Common Issues
 1. **Port conflicts**: Ensure ports 4200, 8000, 8001 are available
 2. **Dependency issues**: Clear node_modules and reinstall
-3. **Build errors**: Check TypeScript compilation errors
-4. **API errors**: Verify backend service is running
+3. **Angular CLI not found**: Install globally with `npm install -g @angular/cli`
+4. **Build errors**: Check TypeScript compilation errors
+5. **API errors**: Verify backend service is running
 
 #### Debug Mode
 ```bash
 # Frontend debug
-npm run build --verbose
+npx ng build --verbose
 
 # Backend debug
 uvicorn backend.app.main:app --reload --log-level debug
@@ -430,3 +454,13 @@ uvicorn main:app --reload --log-level debug
 
 **MiniML - Predictive Quality Control System**  
 Built with ❤️ using Angular 18+, FastAPI, and Python ML
+
+## 👨‍💻 **Developed By**
+
+- **Sankalp Jain** - Full Stack Development & System Architecture
+- **Achyuth Samavedhi** - Backend Development & API Design  
+- **Vineet Anand Modi** - Frontend Development & UI/UX Design
+
+---
+
+*This project demonstrates a complete machine learning pipeline from data ingestion to real-time prediction, showcasing modern web development practices and enterprise-grade architecture.*
