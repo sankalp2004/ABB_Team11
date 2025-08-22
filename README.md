@@ -76,7 +76,7 @@ ML Service (Python)
 ### Docker Deployment
 ```bash
 # Build and run all services
-docker-compose up --build
+docker compose up -d --build backend-dotnet
 
 # Access the application
 # Frontend: http://localhost:4200
