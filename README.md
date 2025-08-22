@@ -46,7 +46,7 @@ ML Service (Python)
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd miniml-quality-control
+   cd path_to_ABB_Team11
    ```
 
 2. **Start Backend Services**
@@ -429,5 +429,4 @@ uvicorn main:app --reload --log-level debug
 
 ---
 
-**MiniML - Predictive Quality Control System**  
 Built by Sankalp, Achyuth and Vineet
